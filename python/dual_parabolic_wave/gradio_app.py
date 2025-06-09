@@ -18,7 +18,9 @@ from .visualization import (
     plot_wave_field_3d,
     plot_parabola_geometry,
     create_interactive_surface_plot,
-    plot_metrics_dashboard
+    plot_metrics_dashboard,
+    create_plotly_animation,
+    create_gif_animation
 )
 
 
@@ -198,6 +200,71 @@ Ready to run simulation!
             
         except Exception as e:
             return f"❌ Error exporting results: {str(e)}", ""
+    
+    def create_wave_animation(self) -> Tuple[str, Optional[go.Figure], Optional[str]]:
+        """Create an animated visualization of wave propagation."""
+        if not self.current_results:
+            return "❌ No simulation results available. Run a simulation first.", None, None
+        
+        if len(self.current_results.wave_data) < 2:
+            return "❌ Need at least 2 time steps for animation. Run simulation with more steps or smaller record interval.", None, None
+        
+        try:
+            # Import here to avoid unused import warning
+            from .visualization import create_plotly_animation, create_gif_animation
+            import os
+            
+            # Create Plotly animation
+            plotly_anim = create_plotly_animation(
+                self.current_results.wave_data,
+                self.current_results.time_steps,
+                title="Wave Propagation in Dual Parabolic Cavity"
+            )
+            
+            # Create GIF animation - save to temp directory
+            gif_filename = f"wave_animation_{int(time.time())}.gif"
+            gif_path = os.path.join("/tmp", gif_filename)
+            created_gif = create_gif_animation(
+                self.current_results.wave_data,
+                self.current_results.time_steps,
+                filename=gif_path,
+                title="Wave Propagation",
+                interval=100  # 100ms between frames
+            )
+            
+            status = f"""
+🎬 Animation Created Successfully!
+
+📊 Animation Details:
+• Total Frames: {len(self.current_results.wave_data)}
+• Time Range: {self.current_results.time_steps[0]:.6f}s to {self.current_results.time_steps[-1]:.6f}s
+• Frame Interval: 100ms
+• GIF File: {gif_filename}
+
+🎮 Interactive Controls:
+• Use ▶️ Play button to start animation
+• Use ⏸️ Pause to stop
+• Drag time slider to scrub through frames
+• Hover over heatmap for amplitude values
+
+🌊 What to Look For:
+• Initial Morlet wavelet pulse from focus point
+• Wave spreading and propagation
+• Reflections from parabolic boundaries
+• Interference patterns and focusing
+• Energy concentration effects
+
+💡 Tip: For better animations, run simulations with smaller record intervals (1-3) and more steps (200-500).
+            """
+            
+            return status, plotly_anim, created_gif
+            
+        except Exception as e:
+            import traceback
+            error_details = traceback.format_exc()
+            return f"❌ Error creating animation: {str(e)}\n\nDetails:\n{error_details}", None, None
+
+    # ...existing code...
 
 
 def create_app() -> gr.Blocks:
@@ -207,7 +274,7 @@ def create_app() -> gr.Blocks:
     
     with gr.Blocks(
         title="🌊 Dual Parabolic Wave Simulation",
-        theme=gr.themes.Soft(),
+        theme="soft",
         css="""
         .container { max-width: 1200px; margin: auto; }
         .header { text-align: center; padding: 20px; }
@@ -315,6 +382,47 @@ def create_app() -> gr.Blocks:
                 # Export file download
                 export_file = gr.File(label="Download Results", visible=False)
             
+            # Wave Animation Tab
+            with gr.Tab("🎬 Wave Animation"):
+                gr.Markdown("""
+                ## 🌊 Wave Propagation Animation
+                
+                Watch the wave front propagate and reflect in the dual parabolic cavity system.
+                The animation shows how the Morlet wavelet spreads from the focus point and
+                interacts with the parabolic boundaries to create focusing effects.
+                """)
+                
+                with gr.Row():
+                    with gr.Column(scale=1):
+                        gr.Markdown("### 🎮 Animation Controls")
+                        
+                        animate_btn = gr.Button("🎬 Create Animation", variant="primary", size="lg")
+                        
+                        with gr.Accordion("Advanced Options", open=False):
+                            frame_interval = gr.Slider(
+                                minimum=50, maximum=500, value=100, step=50,
+                                label="Frame Interval (ms)", info="Time between animation frames"
+                            )
+                            
+                            max_frames = gr.Slider(
+                                minimum=10, maximum=200, value=50, step=10,
+                                label="Max Frames", info="Limit animation length"
+                            )
+                        
+                        animation_status = gr.Textbox(
+                            label="Animation Status",
+                            value="Ready to create animation...",
+                            lines=15,
+                            elem_classes=["status-box"]
+                        )
+                    
+                    with gr.Column(scale=2):
+                        gr.Markdown("### 📺 Interactive Animation")
+                        animation_plot = gr.Plot(label="Wave Propagation Animation")
+                        
+                        gr.Markdown("### 💾 Download Animation")
+                        gif_download = gr.File(label="Download GIF Animation", visible=False)
+
             # Help Tab
             with gr.Tab("❓ Help & Documentation"):
                 gr.Markdown("""
@@ -408,6 +516,12 @@ def create_app() -> gr.Blocks:
         export_btn.click(
             fn=app.export_results,
             outputs=[export_status, export_file]
+        )
+        
+        # Wave animation
+        animate_btn.click(
+            fn=app.create_wave_animation,
+            outputs=[animation_status, animation_plot, gif_download]
         )
         
         # Initialize geometry plot on load

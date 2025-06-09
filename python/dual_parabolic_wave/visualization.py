@@ -418,3 +418,189 @@ def create_interactive_surface_plot(wave_data: np.ndarray,
     )
     
     return fig
+
+
+def create_plotly_animation(wave_data_list: List[np.ndarray],
+                           time_steps: List[float],
+                           title: str = "Wave Propagation Animation") -> go.Figure:
+    """
+    Create an animated Plotly visualization of wave propagation.
+    
+    Args:
+        wave_data_list: List of 2D wave field arrays
+        time_steps: Corresponding time values
+        title: Animation title
+        
+    Returns:
+        plotly Figure object with animation
+    """
+    if not wave_data_list:
+        raise ValueError("No wave data provided")
+    
+    # Determine global color scale
+    vmin = min(np.min(data) for data in wave_data_list)
+    vmax = max(np.max(data) for data in wave_data_list)
+    v_abs_max = max(abs(vmin), abs(vmax))
+    
+    # Create coordinate grids
+    grid_size = wave_data_list[0].shape[0]
+    x = np.linspace(-300, 300, grid_size)
+    y = np.linspace(-300, 300, grid_size)
+    X, Y = np.meshgrid(x, y)
+    
+    # Create frames for animation
+    frames = []
+    for i, (data, t) in enumerate(zip(wave_data_list, time_steps)):
+        frame = go.Frame(
+            data=[go.Heatmap(
+                z=data,
+                x=x,
+                y=y,
+                colorscale='RdBu_r',
+                zmin=-v_abs_max,
+                zmax=v_abs_max,
+                colorbar=dict(title="Amplitude"),
+                hovertemplate='X: %{x}mm<br>Y: %{y}mm<br>Amplitude: %{z:.4f}<extra></extra>'
+            )],
+            name=f"t={t:.6f}s"
+        )
+        frames.append(frame)
+    
+    # Create initial figure
+    fig = go.Figure(
+        data=[go.Heatmap(
+            z=wave_data_list[0],
+            x=x,
+            y=y,
+            colorscale='RdBu_r',
+            zmin=-v_abs_max,
+            zmax=v_abs_max,
+            colorbar=dict(title="Amplitude"),
+            hovertemplate='X: %{x}mm<br>Y: %{y}mm<br>Amplitude: %{z:.4f}<extra></extra>'
+        )],
+        frames=frames
+    )
+    
+    # Add animation controls
+    fig.update_layout(
+        title=f"{title} - Interactive Animation",
+        xaxis_title="X Position (mm)",
+        yaxis_title="Y Position (mm)",
+        updatemenus=[{
+            "type": "buttons",
+            "direction": "left",
+            "showactive": False,
+            "x": 0.1,
+            "y": -0.1,
+            "buttons": [
+                {
+                    "label": "▶️ Play",
+                    "method": "animate",
+                    "args": [None, {
+                        "frame": {"duration": 100, "redraw": True},
+                        "fromcurrent": True,
+                        "transition": {"duration": 50}
+                    }]
+                },
+                {
+                    "label": "⏸️ Pause",
+                    "method": "animate",
+                    "args": [[None], {
+                        "frame": {"duration": 0, "redraw": False},
+                        "mode": "immediate",
+                        "transition": {"duration": 0}
+                    }]
+                }
+            ]
+        }],
+        sliders=[{
+            "steps": [
+                {
+                    "label": f"t={t:.4f}s",
+                    "method": "animate",
+                    "args": [[f"t={t:.6f}s"], {
+                        "frame": {"duration": 0, "redraw": True},
+                        "mode": "immediate",
+                        "transition": {"duration": 0}
+                    }]
+                }
+                for t in time_steps
+            ],
+            "x": 0.1,
+            "len": 0.8,
+            "y": -0.05,
+            "currentvalue": {"prefix": "Time: "}
+        }]
+    )
+    
+    return fig
+
+
+def create_gif_animation(wave_data_list: List[np.ndarray],
+                        time_steps: List[float],
+                        filename: str = "wave_animation.gif",
+                        title: str = "Wave Propagation",
+                        interval: int = 100,
+                        colormap: str = "RdBu_r",
+                        figsize: Tuple[int, int] = (10, 8),
+                        dpi: int = 100) -> str:
+    """
+    Create and save a GIF animation of wave propagation.
+    
+    Args:
+        wave_data_list: List of 2D wave field arrays
+        time_steps: Corresponding time values
+        filename: Output filename for the GIF
+        title: Animation title
+        interval: Delay between frames in milliseconds
+        colormap: Matplotlib colormap
+        figsize: Figure size
+        dpi: DPI for output
+        
+    Returns:
+        Path to the saved GIF file
+    """
+    if not wave_data_list:
+        raise ValueError("No wave data provided")
+    
+    # Set up the figure and axis
+    fig, ax = plt.subplots(figsize=figsize)
+    
+    # Determine global color scale
+    vmin = min(np.min(data) for data in wave_data_list)
+    vmax = max(np.max(data) for data in wave_data_list)
+    v_abs_max = max(abs(vmin), abs(vmax))
+    
+    # Initial plot
+    im = ax.imshow(wave_data_list[0], cmap=colormap, origin='lower',
+                   vmin=-v_abs_max, vmax=v_abs_max, 
+                   extent=(-300, 300, -300, 300))
+    
+    ax.set_xlabel('X Position (mm)')
+    ax.set_ylabel('Y Position (mm)')
+    title_text = ax.set_title(f'{title} - t = {time_steps[0]:.6f} s')
+    
+    # Colorbar
+    cbar = plt.colorbar(im, ax=ax)
+    cbar.set_label('Wave Amplitude')
+    
+    def animate_frame(frame):
+        """Animation function."""
+        im.set_array(wave_data_list[frame])
+        title_text.set_text(f'{title} - t = {time_steps[frame]:.6f} s')
+        return [im, title_text]
+    
+    # Create animation
+    anim = animation.FuncAnimation(
+        fig, animate_frame, frames=len(wave_data_list),
+        interval=interval, blit=True, repeat=True
+    )
+    
+    # Save as GIF
+    try:
+        anim.save(filename, writer='pillow', fps=1000//interval, dpi=dpi)
+        plt.close(fig)  # Clean up
+        return filename
+    except Exception as e:
+        plt.close(fig)
+        raise RuntimeError(f"Failed to save GIF: {str(e)}")

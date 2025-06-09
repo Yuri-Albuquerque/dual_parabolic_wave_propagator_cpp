@@ -139,24 +139,29 @@ class Simulation:
         # For real-valued version: ψ(t) = π^(-1/4) * exp(-t²/2) * cos(σt)
         
         sigma = 2 * np.pi * self.frequency  # Angular frequency
-        pulse_center = 2.0 / self.frequency  # Center time (2 periods)
-        pulse_duration = 6.0 / self.frequency  # Total duration (6 periods for good localization)
+        pulse_center = 1.0 / self.frequency  # Center time (1 period - earlier start)
+        pulse_duration = 4.0 / self.frequency  # Total duration (4 periods for better localization)
         
         source_value = 0.0
         if self.current_time <= pulse_duration:
             # Morlet wavelet centered at pulse_center
             t_shifted = self.current_time - pulse_center
             
-            # Morlet wavelet formula
+            # Enhanced Morlet wavelet formula with better scaling
             normalization = np.pi ** (-0.25)  # Normalization constant
-            gaussian_envelope = np.exp(-0.5 * t_shifted ** 2)
+            
+            # Scale the time for better envelope
+            time_scale = self.frequency / 1000.0  # Normalize by reference frequency
+            scaled_t = t_shifted * time_scale
+            
+            gaussian_envelope = np.exp(-0.5 * scaled_t ** 2)
             complex_exponential = np.cos(sigma * t_shifted)  # Real part of exp(iσt)
             
             # Complete Morlet wavelet
             morlet_value = normalization * gaussian_envelope * complex_exponential
             
-            # Scale by amplitude
-            source_amplitude = self.amplitude * 10.0  # Stronger source
+            # Much stronger source amplitude for better visibility
+            source_amplitude = self.amplitude * 1000.0  # Increased from 10.0 to 1000.0
             source_value = source_amplitude * morlet_value
         
         # Wave equation with finite differences
@@ -171,7 +176,7 @@ class Simulation:
                 
                 # Add source
                 if i == center_x and j == center_y:
-                    acceleration += source_value * 1000.0  # Source strength
+                    acceleration += source_value * 10000.0  # Much stronger source (increased from 1000.0)
                 
                 # Time integration (Verlet method)
                 self.wave_next[i, j] = (2 * self.wave_current[i, j] - self.wave_previous[i, j] + 
