@@ -1,0 +1,4 @@
+/home/yuri/Documents/project/dual_parabolic_wave_cpp/build_x11/CMakeFiles/DualParabolicWaveSimulation.dir
+/home/yuri/Documents/project/dual_parabolic_wave_cpp/build_x11/CMakeFiles/Benchmark.dir
+/home/yuri/Documents/project/dual_parabolic_wave_cpp/build_x11/CMakeFiles/edit_cache.dir
+/home/yuri/Documents/project/dual_parabolic_wave_cpp/build_x11/CMakeFiles/rebuild_cache.dir
