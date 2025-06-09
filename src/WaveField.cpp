@@ -98,10 +98,20 @@ void WaveField::addSourceExcitation(double time) {
         int index = m_focusI * gridSize + m_focusJ;
         
         if (m_boundaryMask[index]) {
-            // Enhanced wave source with envelope
-            double envelope = std::exp(-0.1 * time);
-            double amplitude = m_waveParams.amplitude * 10.0 * envelope * 
-                             std::sin(2.0 * M_PI * m_waveParams.frequency * time);
+            // Single pulse at initial time - Gaussian envelope with short duration
+            double pulseWidth = 1.0 / m_waveParams.frequency; // One period width
+            double pulseDuration = 2.0 * pulseWidth; // Duration of the pulse
+            
+            double amplitude = 0.0;
+            if (time <= pulseDuration) {
+                // Gaussian envelope for smooth pulse
+                double gaussianWidth = pulseWidth / 3.0;
+                double envelope = std::exp(-std::pow(time - pulseWidth, 2) / (2 * gaussianWidth * gaussianWidth));
+                
+                // Single frequency pulse
+                amplitude = m_waveParams.amplitude * 10.0 * envelope * 
+                           std::sin(2.0 * M_PI * m_waveParams.frequency * time);
+            }
             
             m_sourceGrid[index] = static_cast<float>(amplitude);
             
