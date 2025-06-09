@@ -12,6 +12,26 @@ DualParabolicWaveSimulation::DualParabolicWaveSimulation() {
     initializeWaveField();
 }
 
+DualParabolicWaveSimulation::DualParabolicWaveSimulation(int gridSize, double domainSize, 
+                                                       double waveSpeed, double timeStep, 
+                                                       double simulationSpeed) {
+    setupParabolas();
+    setupWaveParameters();
+    setupSimulationConfig();
+    
+    // Override config with custom parameters
+    m_config.gridSize = gridSize;
+    m_config.xMin = -domainSize / 2.0;
+    m_config.xMax = domainSize / 2.0;
+    m_config.yMin = -domainSize / 2.0;
+    m_config.yMax = domainSize / 2.0;
+    m_config.timeStep = timeStep;
+    
+    m_waveParams.speed = waveSpeed * 1000.0; // Convert m/s to mm/s
+    
+    initializeWaveField();
+}
+
 void DualParabolicWaveSimulation::setupParabolas() {
     // Convert units: 20 inches = 508mm, focus distances in mm
     const double majorDiameter = 20.0 * 25.4; // 508mm
@@ -116,6 +136,42 @@ void DualParabolicWaveSimulation::setAmplitude(double amplitude) {
     if (m_waveField) {
         m_waveField->setAmplitude(amplitude);
     }
+}
+
+void DualParabolicWaveSimulation::initialize() {
+    // Initialize the simulation - WaveField is already initialized in constructor
+    if (m_waveField) {
+        m_waveField->reset();
+    }
+}
+
+void DualParabolicWaveSimulation::update() {
+    update(m_config.timeStep);
+}
+
+// Getter implementations for console mode
+int DualParabolicWaveSimulation::getGridSize() const {
+    return m_config.gridSize;
+}
+
+double DualParabolicWaveSimulation::getDomainSize() const {
+    return m_config.xMax - m_config.xMin; // Return width of domain
+}
+
+double DualParabolicWaveSimulation::getWaveSpeed() const {
+    return m_waveParams.speed / 1000.0; // Convert mm/s back to m/s
+}
+
+double DualParabolicWaveSimulation::getTimeStep() const {
+    return m_config.timeStep;
+}
+
+double DualParabolicWaveSimulation::getSimulationSpeed() const {
+    return 1.0; // Default simulation speed
+}
+
+const WaveField& DualParabolicWaveSimulation::getWaveField() const {
+    return *m_waveField;
 }
 
 } // namespace WaveSimulation

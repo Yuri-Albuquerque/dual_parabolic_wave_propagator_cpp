@@ -11,23 +11,34 @@ namespace WaveSimulation {
 class DualParabolicWaveSimulation {
 public:
     DualParabolicWaveSimulation();
+    DualParabolicWaveSimulation(int gridSize, double domainSize, double waveSpeed, 
+                               double timeStep, double simulationSpeed);
     ~DualParabolicWaveSimulation() = default;
     
+    void initialize();
     void reset();
+    void update();
     void update(double dt);
     
     // Configuration
     void setFrequency(double frequency);
     void setAmplitude(double amplitude);
     
-    // Getters
-    std::shared_ptr<WaveField> getWaveField() const { return m_waveField; }
+    // Getters for console mode
+    int getGridSize() const;
+    double getDomainSize() const;
+    double getWaveSpeed() const;
+    double getTimeStep() const;
+    double getSimulationSpeed() const;
+    const WaveField& getWaveField() const;
+    
+    // Existing getters
+    std::shared_ptr<WaveField> getWaveFieldPtr() const { return m_waveField; }
     const Point2D& getFocusPoint() const { return m_focusPoint; }
     std::shared_ptr<Parabola> getMajorParabola() const { return m_majorParabola; }
     std::shared_ptr<Parabola> getMinorParabola() const { return m_minorParabola; }
     const WaveParams& getWaveParams() const { return m_waveParams; }
     const SimulationConfig& getConfig() const { return m_config; }
-    double getCFLTimeStep() const { return m_config.timeStep; }
     
     // Callback for updates
     void setUpdateCallback(std::function<void()> callback) { m_updateCallback = callback; }

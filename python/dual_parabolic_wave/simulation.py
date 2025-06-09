@@ -134,19 +134,30 @@ class Simulation:
         center_x = self.grid_size // 2
         center_y = self.grid_size // 2
         
-        # Single pulse at initial time - Gaussian envelope with short duration
-        pulse_width = 1.0 / self.frequency  # One period width
-        pulse_duration = 2.0 * pulse_width  # Duration of the pulse
+        # Single pulse using Morlet wavelet at initial time
+        # Morlet wavelet: ψ(t) = π^(-1/4) * exp(-t²/2) * exp(iσt)
+        # For real-valued version: ψ(t) = π^(-1/4) * exp(-t²/2) * cos(σt)
+        
+        sigma = 2 * np.pi * self.frequency  # Angular frequency
+        pulse_center = 2.0 / self.frequency  # Center time (2 periods)
+        pulse_duration = 6.0 / self.frequency  # Total duration (6 periods for good localization)
         
         source_value = 0.0
         if self.current_time <= pulse_duration:
-            # Gaussian envelope for smooth pulse
-            gaussian_width = pulse_width / 3.0
-            envelope = np.exp(-((self.current_time - pulse_width) ** 2) / (2 * gaussian_width ** 2))
+            # Morlet wavelet centered at pulse_center
+            t_shifted = self.current_time - pulse_center
             
-            # Single frequency pulse
+            # Morlet wavelet formula
+            normalization = np.pi ** (-0.25)  # Normalization constant
+            gaussian_envelope = np.exp(-0.5 * t_shifted ** 2)
+            complex_exponential = np.cos(sigma * t_shifted)  # Real part of exp(iσt)
+            
+            # Complete Morlet wavelet
+            morlet_value = normalization * gaussian_envelope * complex_exponential
+            
+            # Scale by amplitude
             source_amplitude = self.amplitude * 10.0  # Stronger source
-            source_value = source_amplitude * envelope * np.sin(2 * np.pi * self.frequency * self.current_time)
+            source_value = source_amplitude * morlet_value
         
         # Wave equation with finite differences
         for i in range(1, self.grid_size - 1):

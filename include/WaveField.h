@@ -22,9 +22,10 @@ public:
     
     // Getters
     const std::vector<float>& getGrid() const { return m_grid; }
-    const std::vector<float>& getCurrentData() const { return m_grid; }
+    const std::vector<float>& getCurrentAmplitudes() const { return m_grid; }
     const std::vector<uint8_t>& getBoundaryMask() const { return m_boundaryMask; }
     double getTime() const { return m_time; }
+    double getCurrentTime() const { return m_time; }
     int getGridSize() const { return m_config.gridSize; }
     
     // Configuration

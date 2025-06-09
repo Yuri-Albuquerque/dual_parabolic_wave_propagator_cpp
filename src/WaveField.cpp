@@ -98,19 +98,48 @@ void WaveField::addSourceExcitation(double time) {
         int index = m_focusI * gridSize + m_focusJ;
         
         if (m_boundaryMask[index]) {
-            // Single pulse at initial time - Gaussian envelope with short duration
-            double pulseWidth = 1.0 / m_waveParams.frequency; // One period width
-            double pulseDuration = 2.0 * pulseWidth; // Duration of the pulse
+            // Complete Morlet wavelet implementation (matching TypeScript version)
+            // Formula: Ψ_σ(t) = c_σ π^(-1/4) e^(-1/2 t²) (cos(σt) - κ_σ)
+            // Where:
+            // - κ_σ = e^(-1/2 σ²) (admissibility criterion)
+            // - c_σ = (1 + e^(-σ²) - 2e^(-3/4 σ²))^(-1/2) (normalization constant)
+            // - σ = 6.0 (frequency parameter for good time-frequency localization)
+            
+            const double centralFreq = m_waveParams.frequency;
+            const double timeScale = 1.0 / centralFreq; // Scale time relative to frequency
+            const double pulseCenter = 3.0 * timeScale;  // Center time
+            const double pulseDuration = 8.0 * timeScale; // Total duration (±4 time units)
             
             double amplitude = 0.0;
             if (time <= pulseDuration) {
-                // Gaussian envelope for smooth pulse
-                double gaussianWidth = pulseWidth / 3.0;
-                double envelope = std::exp(-std::pow(time - pulseWidth, 2) / (2 * gaussianWidth * gaussianWidth));
+                // Scale time for proper wavelet duration (centered around t=0)
+                const double scaledTime = (time - pulseCenter) / timeScale;
                 
-                // Single frequency pulse
-                amplitude = m_waveParams.amplitude * 10.0 * envelope * 
-                           std::sin(2.0 * M_PI * m_waveParams.frequency * time);
+                // Use sigma = 6.0 for good time-frequency localization (σ > 5 recommended)
+                const double sigma = 6.0;
+                
+                // Limit wavelet duration to ±4 time units
+                if (std::abs(scaledTime) <= 4.0) {
+                    // Admissibility criterion
+                    const double kappa_sigma = std::exp(-0.5 * sigma * sigma);
+                    
+                    // Normalization constant
+                    const double c_sigma = std::pow(1.0 + std::exp(-sigma * sigma) - 2.0 * std::exp(-0.75 * sigma * sigma), -0.5);
+                    
+                    // Gaussian envelope
+                    const double gaussian = std::exp(-0.5 * scaledTime * scaledTime);
+                    
+                    // Complex exponential - we take the real part (cosine)
+                    const double carrier = std::cos(sigma * scaledTime);
+                    
+                    // Complete Morlet wavelet (real part)
+                    const double normalization = c_sigma * std::pow(M_PI, -0.25);
+                    const double morlet_value = normalization * gaussian * (carrier - kappa_sigma);
+                    
+                    // Scale by amplitude (strong enough for visibility)
+                    const double source_amplitude = m_waveParams.amplitude * 15.0;
+                    amplitude = source_amplitude * morlet_value;
+                }
             }
             
             m_sourceGrid[index] = static_cast<float>(amplitude);

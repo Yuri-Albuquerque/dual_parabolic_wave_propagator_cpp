@@ -129,26 +129,12 @@ DualParabolicWaveSimulation/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/DualParabolicWaveSimulation.dir/build.make CMakeFiles/DualParabolicWaveSimulation.dir/build
 .PHONY : DualParabolicWaveSimulation/fast
 
-#=============================================================================
-# Target rules for targets named Benchmark
-
-# Build rule for target.
-Benchmark: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 Benchmark
-.PHONY : Benchmark
-
-# fast build rule for target.
-Benchmark/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Benchmark.dir/build.make CMakeFiles/Benchmark.dir/build
-.PHONY : Benchmark/fast
-
 src/DualParabolicWaveSimulation.o: src/DualParabolicWaveSimulation.cpp.o
 .PHONY : src/DualParabolicWaveSimulation.o
 
 # target to build an object file
 src/DualParabolicWaveSimulation.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/DualParabolicWaveSimulation.dir/build.make CMakeFiles/DualParabolicWaveSimulation.dir/src/DualParabolicWaveSimulation.cpp.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Benchmark.dir/build.make CMakeFiles/Benchmark.dir/src/DualParabolicWaveSimulation.cpp.o
 .PHONY : src/DualParabolicWaveSimulation.cpp.o
 
 src/DualParabolicWaveSimulation.i: src/DualParabolicWaveSimulation.cpp.i
@@ -157,7 +143,6 @@ src/DualParabolicWaveSimulation.i: src/DualParabolicWaveSimulation.cpp.i
 # target to preprocess a source file
 src/DualParabolicWaveSimulation.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/DualParabolicWaveSimulation.dir/build.make CMakeFiles/DualParabolicWaveSimulation.dir/src/DualParabolicWaveSimulation.cpp.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Benchmark.dir/build.make CMakeFiles/Benchmark.dir/src/DualParabolicWaveSimulation.cpp.i
 .PHONY : src/DualParabolicWaveSimulation.cpp.i
 
 src/DualParabolicWaveSimulation.s: src/DualParabolicWaveSimulation.cpp.s
@@ -166,7 +151,6 @@ src/DualParabolicWaveSimulation.s: src/DualParabolicWaveSimulation.cpp.s
 # target to generate assembly for a file
 src/DualParabolicWaveSimulation.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/DualParabolicWaveSimulation.dir/build.make CMakeFiles/DualParabolicWaveSimulation.dir/src/DualParabolicWaveSimulation.cpp.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Benchmark.dir/build.make CMakeFiles/Benchmark.dir/src/DualParabolicWaveSimulation.cpp.s
 .PHONY : src/DualParabolicWaveSimulation.cpp.s
 
 src/Parabola.o: src/Parabola.cpp.o
@@ -175,7 +159,6 @@ src/Parabola.o: src/Parabola.cpp.o
 # target to build an object file
 src/Parabola.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/DualParabolicWaveSimulation.dir/build.make CMakeFiles/DualParabolicWaveSimulation.dir/src/Parabola.cpp.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Benchmark.dir/build.make CMakeFiles/Benchmark.dir/src/Parabola.cpp.o
 .PHONY : src/Parabola.cpp.o
 
 src/Parabola.i: src/Parabola.cpp.i
@@ -184,7 +167,6 @@ src/Parabola.i: src/Parabola.cpp.i
 # target to preprocess a source file
 src/Parabola.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/DualParabolicWaveSimulation.dir/build.make CMakeFiles/DualParabolicWaveSimulation.dir/src/Parabola.cpp.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Benchmark.dir/build.make CMakeFiles/Benchmark.dir/src/Parabola.cpp.i
 .PHONY : src/Parabola.cpp.i
 
 src/Parabola.s: src/Parabola.cpp.s
@@ -193,7 +175,6 @@ src/Parabola.s: src/Parabola.cpp.s
 # target to generate assembly for a file
 src/Parabola.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/DualParabolicWaveSimulation.dir/build.make CMakeFiles/DualParabolicWaveSimulation.dir/src/Parabola.cpp.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Benchmark.dir/build.make CMakeFiles/Benchmark.dir/src/Parabola.cpp.s
 .PHONY : src/Parabola.cpp.s
 
 src/WaveField.o: src/WaveField.cpp.o
@@ -202,7 +183,6 @@ src/WaveField.o: src/WaveField.cpp.o
 # target to build an object file
 src/WaveField.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/DualParabolicWaveSimulation.dir/build.make CMakeFiles/DualParabolicWaveSimulation.dir/src/WaveField.cpp.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Benchmark.dir/build.make CMakeFiles/Benchmark.dir/src/WaveField.cpp.o
 .PHONY : src/WaveField.cpp.o
 
 src/WaveField.i: src/WaveField.cpp.i
@@ -211,7 +191,6 @@ src/WaveField.i: src/WaveField.cpp.i
 # target to preprocess a source file
 src/WaveField.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/DualParabolicWaveSimulation.dir/build.make CMakeFiles/DualParabolicWaveSimulation.dir/src/WaveField.cpp.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Benchmark.dir/build.make CMakeFiles/Benchmark.dir/src/WaveField.cpp.i
 .PHONY : src/WaveField.cpp.i
 
 src/WaveField.s: src/WaveField.cpp.s
@@ -220,32 +199,7 @@ src/WaveField.s: src/WaveField.cpp.s
 # target to generate assembly for a file
 src/WaveField.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/DualParabolicWaveSimulation.dir/build.make CMakeFiles/DualParabolicWaveSimulation.dir/src/WaveField.cpp.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Benchmark.dir/build.make CMakeFiles/Benchmark.dir/src/WaveField.cpp.s
 .PHONY : src/WaveField.cpp.s
-
-src/benchmark.o: src/benchmark.cpp.o
-.PHONY : src/benchmark.o
-
-# target to build an object file
-src/benchmark.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Benchmark.dir/build.make CMakeFiles/Benchmark.dir/src/benchmark.cpp.o
-.PHONY : src/benchmark.cpp.o
-
-src/benchmark.i: src/benchmark.cpp.i
-.PHONY : src/benchmark.i
-
-# target to preprocess a source file
-src/benchmark.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Benchmark.dir/build.make CMakeFiles/Benchmark.dir/src/benchmark.cpp.i
-.PHONY : src/benchmark.cpp.i
-
-src/benchmark.s: src/benchmark.cpp.s
-.PHONY : src/benchmark.s
-
-# target to generate assembly for a file
-src/benchmark.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Benchmark.dir/build.make CMakeFiles/Benchmark.dir/src/benchmark.cpp.s
-.PHONY : src/benchmark.cpp.s
 
 src/main_console.o: src/main_console.cpp.o
 .PHONY : src/main_console.o
@@ -279,7 +233,6 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... Benchmark"
 	@echo "... DualParabolicWaveSimulation"
 	@echo "... src/DualParabolicWaveSimulation.o"
 	@echo "... src/DualParabolicWaveSimulation.i"
@@ -290,9 +243,6 @@ help:
 	@echo "... src/WaveField.o"
 	@echo "... src/WaveField.i"
 	@echo "... src/WaveField.s"
-	@echo "... src/benchmark.o"
-	@echo "... src/benchmark.i"
-	@echo "... src/benchmark.s"
 	@echo "... src/main_console.o"
 	@echo "... src/main_console.i"
 	@echo "... src/main_console.s"
