@@ -112,22 +112,26 @@ def create_wave_plots(results, grid_size):
         cbar = plt.colorbar(im, ax=ax, shrink=0.8)
         cbar.set_label('Wave Amplitude', fontsize=12)
         
-        # Add parabola boundaries
+        # Add parabola boundaries with CORRECTED specifications
         x_para = np.linspace(-250, 250, 100)
         
-        # Major parabola (y = -x²/400 + 100)
+        # Major parabola: 20" (508mm) diameter, 100mm focus
+        # Equation: y = -x²/(4*f) + f = -x²/400 + 100
         y_major = -x_para**2 / 400 + 100
-        mask_major = (y_major >= -300) & (y_major <= 300)
-        ax.plot(x_para[mask_major], y_major[mask_major], 'k-', linewidth=3, alpha=0.9, label='Major Parabola')
+        mask_major = (y_major >= -300) & (y_major <= 300) & (np.abs(x_para) <= 254)  # 508mm/2 = 254mm
+        ax.plot(x_para[mask_major], y_major[mask_major], 'k-', linewidth=3, alpha=0.9, label='Major Parabola (20")')
         
-        # Minor parabola (y = x²/100 - 25)
-        y_minor = x_para**2 / 100 - 25
-        mask_minor = (y_minor >= -300) & (y_minor <= 300)
-        ax.plot(x_para[mask_minor], y_minor[mask_minor], 'k--', linewidth=3, alpha=0.9, label='Minor Parabola')
+        # Minor parabola: 10mm diameter, 50mm focus (CORRECTED from 100mm!)
+        # Equation: y = x²/(4*f) - f = x²/200 - 50
+        y_minor = x_para**2 / 200 - 50
+        mask_minor = (y_minor >= -300) & (y_minor <= 300) & (np.abs(x_para) <= 5)  # 10mm/2 = 5mm
+        ax.plot(x_para[mask_minor], y_minor[mask_minor], 'k--', linewidth=3, alpha=0.9, label='Minor Parabola (10mm)')
         
-        # Mark focus points
-        ax.plot(0, 100, 'ro', markersize=10, markeredgecolor='black', markeredgewidth=2, label='Major Focus')
-        ax.plot(0, -25, 'bo', markersize=10, markeredgecolor='black', markeredgewidth=2, label='Minor Focus')
+        # Mark focus points (corrected to coincident at origin)
+        ax.plot(0, 0, 'go', markersize=10, markeredgecolor='black', markeredgewidth=2, label='Coincident Focus')
+        # Show parabola vertices for reference
+        ax.plot(0, 100, 'ro', markersize=6, label='Major Vertex')
+        ax.plot(0, -50, 'bo', markersize=6, label='Minor Vertex')
         
         # Calculate current amplitude
         current_max = np.max(np.abs(wave_data))

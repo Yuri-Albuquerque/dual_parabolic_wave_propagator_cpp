@@ -37,26 +37,28 @@ def add_parabola_boundaries(ax, grid_size, x_min=-300, x_max=300, y_min=-300, y_
     x = np.linspace(x_min, x_max, grid_size)
     y = np.linspace(y_min, y_max, grid_size)
     
-    # Major parabola (concave down, opens upward)
+    # Major parabola: 20" (508mm) diameter, 100mm focus
     # y = -x²/(4*f) + f, where f is the focal length
     focal_length_major = 100.0  # mm
     y_major = -x**2 / (4 * focal_length_major) + focal_length_major
     
-    # Only plot the part within our domain
-    mask_major = (y_major >= y_min) & (y_major <= y_max)
-    ax.plot(x[mask_major], y_major[mask_major], 'k-', linewidth=2, alpha=0.7, label='Major Parabola')
+    # Only plot the part within our domain and diameter limit
+    mask_major = (y_major >= y_min) & (y_major <= y_max) & (np.abs(x) <= 254)  # 508mm/2 = 254mm
+    ax.plot(x[mask_major], y_major[mask_major], 'k-', linewidth=2, alpha=0.7, label='Major Parabola (20")')
     
-    # Minor parabola (concave up, opens downward)  
-    focal_length_minor = 25.0  # mm
+    # Minor parabola: 10mm diameter, 50mm focus (CORRECTED!)
+    focal_length_minor = 50.0  # mm (was 25.0, corrected for 50mm focus)
     y_minor = x**2 / (4 * focal_length_minor) - focal_length_minor
     
-    # Only plot the part within our domain
-    mask_minor = (y_minor >= y_min) & (y_minor <= y_max)
-    ax.plot(x[mask_minor], y_minor[mask_minor], 'k--', linewidth=2, alpha=0.7, label='Minor Parabola')
+    # Only plot the part within our domain and diameter limit
+    mask_minor = (y_minor >= y_min) & (y_minor <= y_max) & (np.abs(x) <= 5)  # 10mm/2 = 5mm
+    ax.plot(x[mask_minor], y_minor[mask_minor], 'k--', linewidth=2, alpha=0.7, label='Minor Parabola (10mm)')
     
-    # Mark focus points
-    ax.plot(0, focal_length_major, 'ro', markersize=8, label='Major Focus')
-    ax.plot(0, -focal_length_minor, 'bo', markersize=8, label='Minor Focus')
+    # Mark focus points (corrected to coincident at origin)
+    ax.plot(0, 0, 'go', markersize=10, markeredgecolor='black', markeredgewidth=1, label='Coincident Focus')
+    # Show parabola vertices for reference
+    ax.plot(0, focal_length_major, 'ro', markersize=6, label='Major Vertex')
+    ax.plot(0, -focal_length_minor, 'bo', markersize=6, label='Minor Vertex')
     
     return ax
 

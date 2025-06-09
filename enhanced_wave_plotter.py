@@ -83,16 +83,18 @@ class WavePropagationPlotter:
         return x, y, X, Y
         
     def get_parabola_data(self, x_range):
-        """Get parabola boundary data."""
+        """Get parabola boundary data with CORRECTED specifications."""
         x_para = np.linspace(x_range[0], x_range[1], 200)
         
-        # Major parabola (y = -x²/400 + 100)
+        # Major parabola: 20" (508mm) diameter, 100mm focus  
+        # Equation: y = -x²/(4*f) + f = -x²/400 + 100
         y_major = -x_para**2 / 400 + 100
-        mask_major = (y_major >= -300) & (y_major <= 300)
+        mask_major = (y_major >= -300) & (y_major <= 300) & (np.abs(x_para) <= 254)  # 508mm/2 = 254mm
         
-        # Minor parabola (y = x²/100 - 25)  
-        y_minor = x_para**2 / 100 - 25
-        mask_minor = (y_minor >= -300) & (y_minor <= 300)
+        # Minor parabola: 10mm diameter, 50mm focus (CORRECTED from 100mm!)
+        # Equation: y = x²/(4*f) - f = x²/200 - 50  
+        y_minor = x_para**2 / 200 - 50
+        mask_minor = (y_minor >= -300) & (y_minor <= 300) & (np.abs(x_para) <= 5)  # 10mm/2 = 5mm
         
         return {
             'x': x_para,
@@ -139,11 +141,13 @@ class WavePropagationPlotter:
                 'k-', linewidth=3, alpha=0.9, label='Major Parabola')
         ax.plot(parabola_data['x'][parabola_data['minor_mask']], 
                 parabola_data['minor_y'][parabola_data['minor_mask']], 
-                'k--', linewidth=3, alpha=0.9, label='Minor Parabola')
+                'k--', linewidth=3, alpha=0.9, label='Minor Parabola (10mm)')
                 
-        # Mark focus points
-        ax.plot(0, 100, 'ro', markersize=12, markeredgecolor='black', markeredgewidth=2, label='Major Focus')
-        ax.plot(0, -25, 'bo', markersize=12, markeredgecolor='black', markeredgewidth=2, label='Minor Focus')
+        # Mark focus points (corrected to coincident focus)
+        ax.plot(0, 0, 'go', markersize=12, markeredgecolor='black', markeredgewidth=2, label='Coincident Focus')
+        # Show parabola vertices for reference
+        ax.plot(0, 100, 'ro', markersize=8, markeredgecolor='black', markeredgewidth=1, label='Major Vertex')
+        ax.plot(0, -50, 'bo', markersize=8, markeredgecolor='black', markeredgewidth=1, label='Minor Vertex')
         
         # Calculate current statistics
         max_amp = np.max(np.abs(wave_data))

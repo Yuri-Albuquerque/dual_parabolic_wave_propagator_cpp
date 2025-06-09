@@ -36,7 +36,7 @@ void DualParabolicWaveSimulation::setupParabolas() {
     // Convert units: 20 inches = 508mm, focus distances in mm
     const double majorDiameter = 20.0 * 25.4; // 508mm
     const double majorFocus = 100.0; // mm
-    const double minorDiameter = 100.0; // mm
+    const double minorDiameter = 10.0; // mm (CORRECTED from 100.0 to 10.0)
     const double minorFocus = 50.0; // mm
     
     // Focus point is at origin (coincident focus)

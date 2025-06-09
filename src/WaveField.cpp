@@ -54,7 +54,7 @@ void WaveField::createBoundaryMask() {
     // Parabola parameters (same as TypeScript version)
     const double majorDiameter = 20.0 * 25.4; // 508mm
     const double majorFocus = 100.0;
-    const double minorDiameter = 100.0;
+    const double minorDiameter = 10.0;  // mm (CORRECTED from 100.0 to 10.0)
     const double minorFocus = 50.0;
     
     #pragma omp parallel for collapse(2)

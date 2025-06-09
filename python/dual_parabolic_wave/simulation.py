@@ -88,6 +88,9 @@ class Simulation:
         self.y_max = 300.0
         self.dx = (self.x_max - self.x_min) / self.grid_size
         self.dy = (self.y_max - self.y_min) / self.grid_size
+        
+        # Initialize boundary mask for parabola reflections
+        self._init_boundary_mask()
     
     def set_frequency(self, frequency: float):
         """Set wave frequency in Hz."""
@@ -130,7 +133,10 @@ class Simulation:
         dt = self.cfl_timestep
         c2 = self.speed ** 2
         
-        # Add source at center (focus point)
+        # Calculate parabola boundaries for reflection
+        self._update_boundary_conditions()
+        
+        # Add source at coincident focus point (center of grid)
         center_x = self.grid_size // 2
         center_y = self.grid_size // 2
         
@@ -182,11 +188,8 @@ class Simulation:
                 self.wave_next[i, j] = (2 * self.wave_current[i, j] - self.wave_previous[i, j] + 
                                        acceleration * dt**2)
         
-        # Boundary conditions (absorbing)
-        self.wave_next[0, :] = 0
-        self.wave_next[-1, :] = 0
-        self.wave_next[:, 0] = 0
-        self.wave_next[:, -1] = 0
+        # Boundary conditions (reflecting parabolas with minimal absorption)
+        self._update_boundary_conditions()
         
         # Update arrays
         self.wave_previous, self.wave_current, self.wave_next = (
@@ -285,6 +288,66 @@ class Simulation:
             'use_core': self.use_core,
             'core_available': _CORE_AVAILABLE,
         }
+    
+    def _init_boundary_mask(self):
+        """Initialize boundary mask for parabola reflections."""
+        if not hasattr(self, 'boundary_mask'):
+            self.boundary_mask = np.ones((self.grid_size, self.grid_size), dtype=bool)
+        
+        # Parabola parameters - CORRECTED SPECIFICATIONS
+        # Major parabola: 20 inches (508mm) diameter, 100mm focus
+        major_diameter = 20.0 * 25.4  # 508mm 
+        major_focus = 100.0  # mm
+        
+        # Minor parabola: 10mm diameter, 50mm focus (CORRECTED from 100mm to 10mm)
+        minor_diameter = 10.0  # mm (NOT 100mm!)
+        minor_focus = 50.0   # mm
+        
+        for i in range(self.grid_size):
+            for j in range(self.grid_size):
+                # Convert grid coordinates to physical coordinates
+                x = self.x_min + j * self.dx
+                y = self.y_max - i * self.dy  # Flip Y for visualization
+                
+                # Major parabola (concave down): y = -x²/(4*f) + f
+                major_y = -(x * x) / (4.0 * major_focus) + major_focus
+                inside_major = y <= major_y and abs(x) <= major_diameter / 2.0
+                
+                # Minor parabola (concave up): y = x²/(4*f) - f
+                minor_y = (x * x) / (4.0 * minor_focus) - minor_focus
+                outside_minor = y >= minor_y or abs(x) > minor_diameter / 2.0
+                
+                # Point is in the cavity if inside major AND outside minor
+                self.boundary_mask[i, j] = inside_major and outside_minor
+    
+    def _update_boundary_conditions(self):
+        """Apply wave reflection at parabola boundaries."""
+        if not hasattr(self, 'boundary_mask'):
+            self._init_boundary_mask()
+        
+        # Reflection coefficient (minimal absorption as specified)
+        reflection_coeff = 0.95  # 95% reflection, 5% absorption
+        
+        # Apply boundary conditions - reflect waves at parabola surfaces
+        for i in range(1, self.grid_size - 1):
+            for j in range(1, self.grid_size - 1):
+                if not self.boundary_mask[i, j]:
+                    # Outside the cavity - set to zero (absorbing boundaries)
+                    self.wave_next[i, j] = 0.0
+                else:
+                    # Inside cavity - check for boundary neighbors for reflection
+                    neighbors = [(i-1, j), (i+1, j), (i, j-1), (i, j+1)]
+                    is_boundary_point = False
+                    
+                    for ni, nj in neighbors:
+                        if 0 <= ni < self.grid_size and 0 <= nj < self.grid_size:
+                            if not self.boundary_mask[ni, nj]:
+                                is_boundary_point = True
+                                break
+                    
+                    if is_boundary_point:
+                        # Apply reflection with minimal absorption
+                        self.wave_next[i, j] *= reflection_coeff
 
 
 class PythonSimulation(Simulation):
