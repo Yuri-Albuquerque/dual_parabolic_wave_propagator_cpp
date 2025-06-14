@@ -2,6 +2,7 @@
 #include <cmath>
 #include <iostream>
 #include <iomanip>
+#include <memory>
 
 namespace WaveSimulation {
 
@@ -20,10 +21,12 @@ DualParabolicWaveSimulation::DualParabolicWaveSimulation(int gridSize, double do
     
     // Override config with custom parameters BEFORE calculating CFL time step
     m_config.gridSize = gridSize;
-    m_config.xMin = -domainSize / 2.0;
-    m_config.xMax = domainSize / 2.0;
-    m_config.yMin = -domainSize / 2.0;
-    m_config.yMax = domainSize / 2.0;
+    
+    // Use the correct parabolic domain configuration instead of square domain
+    m_config.xMin = -300.0;  // mm
+    m_config.xMax = 300.0;   // mm  
+    m_config.yMin = -100.0;  // mm
+    m_config.yMax = 150.0;   // mm
     
     m_waveParams.speed = waveSpeed * 1000.0; // Convert m/s to mm/s
     
@@ -31,17 +34,22 @@ DualParabolicWaveSimulation::DualParabolicWaveSimulation(int gridSize, double do
     const double dx = (m_config.xMax - m_config.xMin) / (m_config.gridSize - 1);
     const double dy = (m_config.yMax - m_config.yMin) / (m_config.gridSize - 1);
     const double minGridSpacing = std::min(dx, dy);
-    const double speed = m_waveParams.speed;
     
-    // CFL condition: dt <= CFL_factor * min(dx,dy) / (c * sqrt(2))
+    // Wave speeds in different materials  
+    const double c_air = m_waveParams.speed;           // Air speed (343,000 mm/s)
+    const double c_parabolic = 1500000.0;              // Parabolic material (1,500,000 mm/s = 1500 m/s)
+    const double maxWaveSpeed = c_parabolic;           // Use fastest speed for CFL stability
+    
+    // CFL condition: dt <= CFL_factor * min(dx,dy) / (c_max * sqrt(2))
     // Use CFL_factor = 0.4 for stability margin
-    const double maxStableTimeStep = 0.4 * minGridSpacing / (speed * std::sqrt(2.0));
+    const double maxStableTimeStep = 0.4 * minGridSpacing / (maxWaveSpeed * std::sqrt(2.0));
     
     m_config.timeStep = maxStableTimeStep; // Use CFL-compliant time step instead of custom
     m_config.dampingFactor = 0.001; // Minimal damping for better wave propagation
     m_config.reflectionCoeff = 0.95; // High reflection coefficient
     
     std::cout << "CFL-compliant time step: " << std::scientific << maxStableTimeStep << " s" << std::endl;
+    std::cout << "Air speed: " << c_air << " mm/s, Parabolic speed: " << c_parabolic << " mm/s" << std::endl;
     std::cout << "Grid spacing: dx=" << std::fixed << std::setprecision(3) << dx 
               << "mm, dy=" << dy << "mm" << std::endl;
     
@@ -88,21 +96,26 @@ void DualParabolicWaveSimulation::setupSimulationConfig() {
     m_config.yMax = 150.0;
     m_config.gridSize = 300;
     
-    // Calculate CFL-compliant time step
+    // Calculate CFL-compliant time step based on FASTEST wave speed
     const double dx = (m_config.xMax - m_config.xMin) / (m_config.gridSize - 1);
     const double dy = (m_config.yMax - m_config.yMin) / (m_config.gridSize - 1);
     const double minGridSpacing = std::min(dx, dy);
-    const double speed = m_waveParams.speed;
     
-    // CFL condition: dt <= CFL_factor * min(dx,dy) / (c * sqrt(2))
+    // Wave speeds in different materials
+    const double c_air = m_waveParams.speed;           // Air speed
+    const double c_parabolic = 1500000.0;              // Parabolic material (1,500,000 mm/s = 1500 m/s)
+    const double maxWaveSpeed = c_parabolic;           // Use fastest speed for CFL stability
+    
+    // CFL condition: dt <= CFL_factor * min(dx,dy) / (c_max * sqrt(2))
     // Use CFL_factor = 0.4 for stability margin
-    const double maxStableTimeStep = 0.4 * minGridSpacing / (speed * std::sqrt(2.0));
+    const double maxStableTimeStep = 0.4 * minGridSpacing / (maxWaveSpeed * std::sqrt(2.0));
     
     m_config.timeStep = maxStableTimeStep;
     m_config.dampingFactor = 0.001; // Minimal damping for better wave propagation
     m_config.reflectionCoeff = 0.95; // High reflection coefficient
     
     std::cout << "CFL-compliant time step: " << std::scientific << maxStableTimeStep << " s" << std::endl;
+    std::cout << "Air speed: " << c_air << " mm/s, Parabolic speed: " << c_parabolic << " mm/s" << std::endl;
     std::cout << "Grid spacing: dx=" << std::fixed << std::setprecision(3) << dx 
               << "mm, dy=" << dy << "mm" << std::endl;
 }

@@ -3,6 +3,13 @@
 #include <cstdint>
 #include <memory>
 
+// Boundary material types for thick parabolic reflectors
+enum class BoundaryType : uint8_t {
+    AIR = 0,        // Normal propagation medium (343 m/s)
+    PARABOLIC = 1,  // Thick parabolic material (1500 m/s - 4.4x faster)
+    RIGID = 2       // Rigid boundary (zero displacement)
+};
+
 namespace WaveSimulation {
 
 struct Point2D {
@@ -35,13 +42,6 @@ struct SimulationConfig {
     double timeStep = 1e-6;              // seconds
     double dampingFactor = 0.001;
     double reflectionCoeff = 0.95;
-};
-
-// Boundary material types for thick parabolic reflectors
-enum class BoundaryType : uint8_t {
-    AIR = 0,        // Normal propagation medium (343 m/s)
-    PARABOLIC = 1,  // Thick parabolic material (0.343 m/s - 1000x slower)
-    RIGID = 2       // Rigid boundary (zero displacement)
 };
 
 // Forward declarations

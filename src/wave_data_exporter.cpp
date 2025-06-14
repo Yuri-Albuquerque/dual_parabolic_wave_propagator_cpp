@@ -58,6 +58,27 @@ void exportBoundaryMask(const std::vector<uint8_t>& mask, int gridSize,
     file.close();
 }
 
+void exportBoundaryTypes(const std::vector<BoundaryType>& boundaryTypes, int gridSize, 
+                        const std::string& outputDir) {
+    std::string filename = outputDir + "/boundary_types.txt";
+    
+    std::ofstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Error: Could not open file " << filename << std::endl;
+        return;
+    }
+    
+    for (int i = 0; i < gridSize; i++) {
+        for (int j = 0; j < gridSize; j++) {
+            file << static_cast<int>(boundaryTypes[i * gridSize + j]);
+            if (j < gridSize - 1) file << " ";
+        }
+        file << "\n";
+    }
+    
+    file.close();
+}
+
 void exportMetadata(const DualParabolicWaveSimulation& simulation,
                    int numTimeSteps, double totalDuration,
                    const std::string& outputDir) {
@@ -94,11 +115,10 @@ int main(int argc, char* argv[]) {
     std::cout << "===================================================" << std::endl;
     
     // Parse command line arguments
-    int gridSize = 200;
-    double domainSize = 600.0;  // mm
+    int gridSize = 120;        // Adjusted grid size for rectangular domain (120x120 for 600x250 mm domain)
+    double domainSize = 600.0;  // mm (will be rectangular: 600mm x 250mm)
     double waveSpeed = 343.0;   // m/s
-    double duration = 2e-6;     // seconds
-    int captureInterval = 10;   // capture every N steps
+    double duration = 5e-6;     // 5 microseconds - much more reasonable for 1500 m/s parabolic speed
     std::string outputDir = "cpp_wave_data";
     
     if (argc > 1) outputDir = argv[1];
@@ -108,7 +128,7 @@ int main(int argc, char* argv[]) {
     
     std::cout << "Configuration:" << std::endl;
     std::cout << "  Grid Size: " << gridSize << "x" << gridSize << std::endl;
-    std::cout << "  Domain Size: " << domainSize << "mm x " << domainSize << "mm" << std::endl;
+    std::cout << "  Domain Size: 600mm x 250mm (rectangular)" << std::endl;
     std::cout << "  Wave Speed: " << waveSpeed << " m/s" << std::endl;
     std::cout << "  Duration: " << std::scientific << duration << " s" << std::endl;
     std::cout << "  Output Directory: " << outputDir << std::endl;
@@ -129,17 +149,22 @@ int main(int argc, char* argv[]) {
     
     // Get simulation parameters
     double timeStep = simulation.getTimeStep();
-    int totalSteps = static_cast<int>(duration / timeStep);
-    int numCaptures = totalSteps / captureInterval;
+    long long totalSteps = static_cast<long long>(duration / timeStep);
+    
+    // For 5-second simulation with tiny timesteps, capture at reasonable intervals
+    int targetCaptures = 100;  // Target 100 snapshots for the 5-second animation
+    long long captureInterval = std::max(1LL, totalSteps / targetCaptures);
+    long long numCaptures = totalSteps / captureInterval;
     
     std::cout << "  CFL time step: " << std::scientific << timeStep << " s" << std::endl;
     std::cout << "  Total steps: " << totalSteps << std::endl;
     std::cout << "  Capture interval: " << captureInterval << " steps" << std::endl;
     std::cout << "  Expected captures: " << numCaptures << std::endl;
     
-    // Export boundary mask
+    // Export boundary mask and boundary types
     const WaveField& waveField = simulation.getWaveField();
     exportBoundaryMask(waveField.getBoundaryMask(), waveField.getGridSize(), outputDir);
+    exportBoundaryTypes(waveField.getBoundaryTypes(), waveField.getGridSize(), outputDir);
     
     // Export metadata
     exportMetadata(simulation, numCaptures, duration, outputDir);
@@ -148,7 +173,7 @@ int main(int argc, char* argv[]) {
     std::cout << "\n⏳ Running simulation and exporting data..." << std::endl;
     
     int captureCount = 0;
-    for (int step = 0; step < totalSteps; step++) {
+    for (long long step = 0; step < totalSteps; step++) {
         if (step > 0) {
             simulation.update();
         }
@@ -159,9 +184,18 @@ int main(int argc, char* argv[]) {
             exportWaveData(grid, waveField.getGridSize(), captureCount, outputDir);
             captureCount++;
             
+            // Progress reporting every 10 captures
             if (captureCount % 10 == 0) {
-                std::cout << "  Exported " << captureCount << "/" << numCaptures << " snapshots..." << std::endl;
+                double progress = (double)step / totalSteps * 100.0;
+                double simTime = step * timeStep;
+                std::cout << "  Progress: " << std::fixed << std::setprecision(1) 
+                         << progress << "% (t=" << std::scientific << simTime << "s)" << std::endl;
             }
+        }
+        
+        // Early exit if we have enough captures
+        if (captureCount >= targetCaptures) {
+            break;
         }
     }
     
@@ -169,7 +203,8 @@ int main(int argc, char* argv[]) {
     std::cout << "  Total snapshots: " << captureCount << std::endl;
     std::cout << "  Output directory: " << outputDir << std::endl;
     std::cout << "  Files exported:" << std::endl;
-    std::cout << "    - boundary_mask.txt (parabolic geometry)" << std::endl;
+    std::cout << "    - boundary_mask.txt (wave propagation mask)" << std::endl;
+    std::cout << "    - boundary_types.txt (material types: 0=RIGID, 1=AIR, 2=PARABOLIC)" << std::endl;
     std::cout << "    - metadata.txt (simulation parameters)" << std::endl;
     std::cout << "    - wave_data_t*.txt (wave field snapshots)" << std::endl;
     

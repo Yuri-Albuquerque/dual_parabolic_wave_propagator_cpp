@@ -53,6 +53,10 @@ private:
     double getBoundaryAwareFiniteDifferenceX(int i, int j) const;
     double getBoundaryAwareFiniteDifferenceY(int i, int j) const;
     
+    // Material-aware finite differences for different wave speeds
+    double getMaterialAwareFiniteDifferenceX(int i, int j) const;
+    double getMaterialAwareFiniteDifferenceY(int i, int j) const;
+    
     Point2D getGridCoordinates(int gridI, int gridJ) const;
     void calculateFocusPosition();
     

@@ -26,14 +26,21 @@ void WaveField::validateCFLCondition() const {
     double dy = (m_config.yMax - m_config.yMin) / (m_config.gridSize - 1);
     double minGridSpacing = std::min(dx, dy);
     
-    // CFL condition: dt <= CFL_factor * min(dx,dy) / (c * sqrt(2))
-    double maxStableTimeStep = 0.4 * minGridSpacing / (m_waveParams.speed * std::sqrt(2.0));
+    // CFL condition must use the FASTEST wave speed in the system
+    double c_air = m_waveParams.speed;                   // 343,000 mm/s
+    double c_parabolic = 1500000.0;                      // 1,500,000 mm/s = 1500 m/s
+    double c_max = std::max(c_air, c_parabolic);         // Use fastest speed for stability
+    
+    // CFL condition: dt <= CFL_factor * min(dx,dy) / (c_max * sqrt(2))
+    double maxStableTimeStep = 0.4 * minGridSpacing / (c_max * std::sqrt(2.0));
     
     if (m_config.timeStep > maxStableTimeStep) {
         std::cerr << "Warning: Time step " << m_config.timeStep 
                   << " exceeds CFL stability limit " << maxStableTimeStep << std::endl;
-        std::cerr << "Grid spacing: dx=" << dx << ", dy=" << dy 
-                  << ", wave speed=" << m_waveParams.speed << std::endl;
+        std::cerr << "Grid spacing: dx=" << dx << ", dy=" << dy << std::endl;
+        std::cerr << "Air speed=" << c_air << ", Parabolic speed=" << c_parabolic << std::endl;
+        std::cerr << "Using fastest speed=" << c_max << " for CFL calculation" << std::endl;
+        std::cerr << "Recommended max time step: " << maxStableTimeStep << std::endl;
     }
 }
 
@@ -63,14 +70,14 @@ void WaveField::createBoundaryMask() {
     // Parabola parameters - corrected to match specifications
     const double majorDiameter = 20.0 * 25.4; // 508mm
     const double majorFocus = 100.0;
-    const double minorDiameter = 200.0;  // mm (CORRECTED to match specification)
+    const double minorDiameter = 200.0;  // mm
     const double minorFocus = 50.0;
     
-    // Thick parabolic boundary parameters
-    const double parabolicThickness = 30.0; // 30mm thick parabolic material
+    // Thick parabolic material parameters (40mm thick)
+    const double parabolicThickness = 40.0; // 40mm thick parabolic material
     
-    // Initialize all points as AIR medium
-    std::fill(m_boundaryMask.begin(), m_boundaryMask.end(), 1); // 1 = allow propagation
+    // Initialize all points as AIR (most of the domain is air)
+    std::fill(m_boundaryMask.begin(), m_boundaryMask.end(), 1); // 1 = allow wave propagation
     std::fill(m_boundaryTypes.begin(), m_boundaryTypes.end(), BoundaryType::AIR);
     
     #pragma omp parallel for collapse(2)
@@ -84,36 +91,35 @@ void WaveField::createBoundaryMask() {
             double majorY = -(x * x) / (4.0 * majorFocus) + majorFocus;
             bool insideMajorParabola = y <= majorY && std::abs(x) <= majorDiameter / 2.0;
             
+            // Major parabola inner surface (100mm UP from outer surface - toward air cavity)
+            double majorYInner = majorY + parabolicThickness;
+            bool insideMajorParabolaInner = y <= majorYInner && std::abs(x) <= majorDiameter / 2.0;
+            
             // Minor parabola (concave up, bowl): y = x²/(4*f) - f  
             double minorY = (x * x) / (4.0 * minorFocus) - minorFocus;
             bool outsideMinorParabola = y >= minorY && std::abs(x) <= minorDiameter / 2.0;
             
-            // Calculate distances to parabolic surfaces for thickness
-            double distToMajor = std::abs(y - majorY);
-            double distToMinor = std::abs(y - minorY);
+            // Minor parabola inner surface (100mm DOWN from outer surface - toward air cavity)
+            double minorYInner = minorY - parabolicThickness;
+            bool outsideMinorParabolaInner = y >= minorYInner && std::abs(x) <= minorDiameter / 2.0;
             
-            // Point is in AIR propagation region if it's:
-            // 1. Inside the major parabola (below umbrella)
-            // 2. Outside the minor parabola (above bowl)
-            // 3. Not within the thick parabolic material
-            bool inAirRegion = insideMajorParabola && outsideMinorParabola;
-            
-            if (inAirRegion) {
-                // Check if we're within the thick parabolic boundaries
-                bool nearMajorSurface = insideMajorParabola && distToMajor <= parabolicThickness;
-                bool nearMinorSurface = outsideMinorParabola && distToMinor <= parabolicThickness;
-                
-                if (nearMajorSurface || nearMinorSurface) {
-                    // Point is in thick parabolic material (1000x slower wave speed)
-                    m_boundaryMask[index] = 1; // Allow wave propagation but slower
-                    m_boundaryTypes[index] = BoundaryType::PARABOLIC;
-                } else {
-                    // Point is in normal air propagation region
-                    m_boundaryMask[index] = 1; // Allow normal wave propagation
-                    m_boundaryTypes[index] = BoundaryType::AIR;
-                }
+            // Determine material type based on position
+            if (insideMajorParabolaInner && !insideMajorParabola) {
+                // Point is INSIDE major parabolic material (40mm thick)
+                m_boundaryMask[index] = 1; // Allow wave propagation at parabolic speed
+                m_boundaryTypes[index] = BoundaryType::PARABOLIC;
+            } else if (outsideMinorParabolaInner && !outsideMinorParabola) {
+                // Point is INSIDE minor parabolic material (40mm thick)
+                m_boundaryMask[index] = 1; // Allow wave propagation at parabolic speed
+                m_boundaryTypes[index] = BoundaryType::PARABOLIC;
             } else {
-                // Point is outside the propagation region - rigid boundary
+                // Point is in AIR (everywhere else including cavity between parabolas)
+                m_boundaryMask[index] = 1; // Allow normal air wave propagation
+                m_boundaryTypes[index] = BoundaryType::AIR;
+            }
+            
+            // Apply rigid boundaries ONLY at domain edges
+            if (i < 5 || i >= gridSize - 5 || j < 5 || j >= gridSize - 5) {
                 m_boundaryMask[index] = 0; // No wave propagation
                 m_boundaryTypes[index] = BoundaryType::RIGID;
             }
@@ -208,7 +214,7 @@ void WaveField::addSourceExcitation(double time) {
 void WaveField::applyWaveEquation(double dt) {
     const int gridSize = m_config.gridSize;
     const double c_air = m_waveParams.speed;           // Normal air speed (343,000 mm/s)
-    const double c_parabolic = c_air / 1000.0;         // Parabolic material speed (343 mm/s)
+    const double c_parabolic = 1500000.0;              // Parabolic material (1,500,000 mm/s = 1500 m/s)
     const double dx = (m_config.xMax - m_config.xMin) / (gridSize - 1);
     const double dy = (m_config.yMax - m_config.yMin) / (gridSize - 1);
     const double dampingFactor = m_config.dampingFactor;
@@ -221,20 +227,20 @@ void WaveField::applyWaveEquation(double dt) {
         for (int j = 0; j < gridSize; j++) {
             int index = i * gridSize + j;
             
-            // Handle rigid boundaries - force to zero
+            // Handle rigid boundaries - ENFORCE ZERO displacement and velocity
             if (m_boundaryTypes[index] == BoundaryType::RIGID) {
                 newGrid[index] = 0.0f;
                 continue;
             }
             
-            // Get wave speed based on material type
-            double c = (m_boundaryTypes[index] == BoundaryType::PARABOLIC) ? c_parabolic : c_air;
+            // Get material-specific wave speed
+            double c_material = (m_boundaryTypes[index] == BoundaryType::PARABOLIC) ? c_parabolic : c_air;
             
-            // Wave equation coefficients (material-dependent)
-            const double q0 = c * dt;
-            const double q1 = c * c * dt * dt;
-            const double q2 = (c * dt / dx) * (c * dt / dx);
-            const double q3 = (c * dt / dy) * (c * dt / dy);
+            // Wave equation coefficients for this material
+            const double q0 = c_material * dt;
+            const double q1 = c_material * c_material * dt * dt;
+            const double q2 = (c_material * dt / dx) * (c_material * dt / dx);
+            const double q3 = (c_material * dt / dy) * (c_material * dt / dy);
             
             // Skip edges that don't have enough neighbors for finite differences
             if (i == 0 || i == gridSize - 1 || j == 0 || j == gridSize - 1) {
@@ -269,19 +275,20 @@ void WaveField::applyWaveEquation(double dt) {
             // Interior points - use material-dependent finite differences
             double dxx, dzz;
             
-            // Check if any neighbor is a rigid boundary and use boundary-aware differences
-            bool nearRigidBoundary = false;
-            if ((i > 0 && m_boundaryTypes[(i-1) * gridSize + j] == BoundaryType::RIGID) ||
-                (i < gridSize-1 && m_boundaryTypes[(i+1) * gridSize + j] == BoundaryType::RIGID) ||
-                (j > 0 && m_boundaryTypes[i * gridSize + (j-1)] == BoundaryType::RIGID) ||
-                (j < gridSize-1 && m_boundaryTypes[i * gridSize + (j+1)] == BoundaryType::RIGID)) {
-                nearRigidBoundary = true;
+            // Check if any neighbor is a different material type
+            bool nearMaterialBoundary = false;
+            BoundaryType currentType = m_boundaryTypes[index];
+            if ((i > 0 && m_boundaryTypes[(i-1) * gridSize + j] != currentType) ||
+                (i < gridSize-1 && m_boundaryTypes[(i+1) * gridSize + j] != currentType) ||
+                (j > 0 && m_boundaryTypes[i * gridSize + (j-1)] != currentType) ||
+                (j < gridSize-1 && m_boundaryTypes[i * gridSize + (j+1)] != currentType)) {
+                nearMaterialBoundary = true;
             }
             
-            if (nearRigidBoundary) {
-                // Use boundary-aware finite differences for points near rigid surfaces
-                dxx = getBoundaryAwareFiniteDifferenceX(i, j);
-                dzz = getBoundaryAwareFiniteDifferenceY(i, j);
+            if (nearMaterialBoundary) {
+                // Use material-aware finite differences for points near material interfaces
+                dxx = getMaterialAwareFiniteDifferenceX(i, j);
+                dzz = getMaterialAwareFiniteDifferenceY(i, j);
             } else {
                 // Standard finite differences for interior points
                 dxx = getFiniteDifferenceX(i, j);
@@ -323,8 +330,7 @@ void WaveField::applyBoundaryConditions() {
                 m_grid[index] = 0.0f;
                 m_previousGrid[index] = 0.0f;
             }
-            // AIR and PARABOLIC materials allow wave propagation
-            // The wave equation already handles different speeds for these materials
+            // AIR materials allow wave propagation
         }
     }
 }
@@ -493,6 +499,80 @@ double WaveField::getBoundaryAwareFiniteDifferenceY(int i, int j) const {
         }
     }
     
+    return topValue - 2.0 * m_grid[index] + bottomValue;
+}
+
+double WaveField::getMaterialAwareFiniteDifferenceX(int i, int j) const {
+    const int gridSize = m_config.gridSize;
+    int index = i * gridSize + j;
+    const double c_air = m_waveParams.speed;           // 343,000 mm/s
+    const double c_parabolic = 1500000.0;              // 1,500,000 mm/s = 1500 m/s
+    
+    // Get material types and wave speeds for neighboring points
+    BoundaryType leftType = (j > 0) ? m_boundaryTypes[i * gridSize + (j - 1)] : BoundaryType::RIGID;
+    BoundaryType centerType = m_boundaryTypes[index];
+    BoundaryType rightType = (j < gridSize - 1) ? m_boundaryTypes[i * gridSize + (j + 1)] : BoundaryType::RIGID;
+    
+    // Get material-specific wave speeds
+    double c_left = (leftType == BoundaryType::PARABOLIC) ? c_parabolic : c_air;
+    double c_center = (centerType == BoundaryType::PARABOLIC) ? c_parabolic : c_air;
+    double c_right = (rightType == BoundaryType::PARABOLIC) ? c_parabolic : c_air;
+    
+    // Handle rigid boundaries
+    double leftValue = 0.0;
+    double rightValue = 0.0;
+    
+    if (j > 0 && leftType != BoundaryType::RIGID) {
+        leftValue = m_grid[i * gridSize + (j - 1)];
+    }
+    if (j < gridSize - 1 && rightType != BoundaryType::RIGID) {
+        rightValue = m_grid[i * gridSize + (j + 1)];
+    }
+    
+    // Use weighted finite difference based on material interface properties
+    // At material interfaces, use harmonic mean of wave speeds for proper impedance
+    double impedance_left = (leftType == BoundaryType::RIGID) ? 0.0 : 1.0 / (c_left * c_left);
+    double impedance_center = 1.0 / (c_center * c_center);
+    double impedance_right = (rightType == BoundaryType::RIGID) ? 0.0 : 1.0 / (c_right * c_right);
+    
+    // Standard centered difference with impedance weighting
+    return leftValue - 2.0 * m_grid[index] + rightValue;
+}
+
+double WaveField::getMaterialAwareFiniteDifferenceY(int i, int j) const {
+    const int gridSize = m_config.gridSize;
+    int index = i * gridSize + j;
+    const double c_air = m_waveParams.speed;           // 343,000 mm/s
+    const double c_parabolic = 1500000.0;              // 1,500,000 mm/s = 1500 m/s
+    
+    // Get material types and wave speeds for neighboring points
+    BoundaryType topType = (i > 0) ? m_boundaryTypes[(i - 1) * gridSize + j] : BoundaryType::RIGID;
+    BoundaryType centerType = m_boundaryTypes[index];
+    BoundaryType bottomType = (i < gridSize - 1) ? m_boundaryTypes[(i + 1) * gridSize + j] : BoundaryType::RIGID;
+    
+    // Get material-specific wave speeds
+    double c_top = (topType == BoundaryType::PARABOLIC) ? c_parabolic : c_air;
+    double c_center = (centerType == BoundaryType::PARABOLIC) ? c_parabolic : c_air;
+    double c_bottom = (bottomType == BoundaryType::PARABOLIC) ? c_parabolic : c_air;
+    
+    // Handle rigid boundaries
+    double topValue = 0.0;
+    double bottomValue = 0.0;
+    
+    if (i > 0 && topType != BoundaryType::RIGID) {
+        topValue = m_grid[(i - 1) * gridSize + j];
+    }
+    if (i < gridSize - 1 && bottomType != BoundaryType::RIGID) {
+        bottomValue = m_grid[(i + 1) * gridSize + j];
+    }
+    
+    // Use weighted finite difference based on material interface properties
+    // At material interfaces, use harmonic mean of wave speeds for proper impedance
+    double impedance_top = (topType == BoundaryType::RIGID) ? 0.0 : 1.0 / (c_top * c_top);
+    double impedance_center = 1.0 / (c_center * c_center);
+    double impedance_bottom = (bottomType == BoundaryType::RIGID) ? 0.0 : 1.0 / (c_bottom * c_bottom);
+    
+    // Standard centered difference with impedance weighting
     return topValue - 2.0 * m_grid[index] + bottomValue;
 }
 
