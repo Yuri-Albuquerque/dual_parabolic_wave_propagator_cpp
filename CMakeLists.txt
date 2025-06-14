@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Option to build with or without Qt GUI
 option(BUILD_GUI "Build with Qt GUI" OFF)
+option(BUILD_PYTHON_BINDINGS "Build Python bindings with pybind11" OFF)
 
 if(BUILD_GUI)
     # Find Qt6 components for GUI version
@@ -59,6 +60,19 @@ else()
         include/DualParabolicWaveSimulation.h
         include/Types.h
     )
+    
+    # Also create wave data exporter
+    add_executable(WaveDataExporter
+        src/wave_data_exporter.cpp
+        src/WaveField.cpp
+        src/Parabola.cpp
+        src/DualParabolicWaveSimulation.cpp
+    )
+    
+    # Link OpenMP to data exporter if available
+    if(OpenMP_CXX_FOUND)
+        target_link_libraries(WaveDataExporter PRIVATE OpenMP::OpenMP_CXX)
+    endif()
 endif()
 
 # Create executable
@@ -89,6 +103,53 @@ endif()
 set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
+
+# Set output directory for data exporter if it exists
+if(TARGET WaveDataExporter)
+    set_target_properties(WaveDataExporter PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+    )
+endif()
+
+# Python bindings with pybind11
+if(BUILD_PYTHON_BINDINGS)
+    # Try to find pybind11 using pip installation
+    execute_process(
+        COMMAND python3 -m pybind11 --cmakedir
+        OUTPUT_VARIABLE pybind11_DIR
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE pybind11_FOUND
+    )
+    
+    if(pybind11_FOUND EQUAL 0)
+        set(pybind11_DIR ${pybind11_DIR})
+        find_package(pybind11 REQUIRED PATHS ${pybind11_DIR})
+    else()
+        # Fallback: try to find pybind11 normally
+        find_package(pybind11 REQUIRED)
+    endif()
+    
+    # Create Python module
+    pybind11_add_module(dual_parabolic_wave_cpp 
+        src/python_bindings.cpp
+        src/WaveField.cpp
+        src/Parabola.cpp
+        src/DualParabolicWaveSimulation.cpp
+    )
+    
+    # Link OpenMP if available
+    if(OpenMP_CXX_FOUND)
+        target_link_libraries(dual_parabolic_wave_cpp PRIVATE OpenMP::OpenMP_CXX)
+    endif()
+    
+    # Compiler-specific options for Python module
+    target_compile_definitions(dual_parabolic_wave_cpp PRIVATE VERSION_INFO="${PROJECT_VERSION}")
+    
+    # Set output directory for Python module
+    set_target_properties(dual_parabolic_wave_cpp PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/python
+    )
+endif()
 
 # Copy any resources if needed
 # file(COPY resources DESTINATION ${CMAKE_BINARY_DIR})

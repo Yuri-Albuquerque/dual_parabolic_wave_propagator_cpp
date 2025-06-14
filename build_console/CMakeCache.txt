@@ -14,8 +14,14 @@
 # EXTERNAL cache entries
 ########################
 
+//No help, variable specified on the command line.
+BUILD_CONSOLE:UNINITIALIZED=ON
+
 //Build with Qt GUI
 BUILD_GUI:BOOL=OFF
+
+//Build Python bindings with pybind11
+BUILD_PYTHON_BINDINGS:BOOL=OFF
 
 //Build with X11 GUI
 BUILD_X11:BOOL=OFF

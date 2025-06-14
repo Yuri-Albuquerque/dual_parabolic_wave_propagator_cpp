@@ -24,6 +24,7 @@ public:
     const std::vector<float>& getGrid() const { return m_grid; }
     const std::vector<float>& getCurrentAmplitudes() const { return m_grid; }
     const std::vector<uint8_t>& getBoundaryMask() const { return m_boundaryMask; }
+    const std::vector<BoundaryType>& getBoundaryTypes() const { return m_boundaryTypes; }
     double getTime() const { return m_time; }
     double getCurrentTime() const { return m_time; }
     int getGridSize() const { return m_config.gridSize; }
@@ -37,8 +38,20 @@ private:
     void createBoundaryMask();
     void applyWaveEquation(double dt);
     void applyBoundaryConditions();
+    void applyParabolicReflection(int i, int j);
+    void applyGhostPointReflection(int i, int j, const Point2D& normal);
     void addSourceExcitation(double time);
     void validateCFLCondition() const;
+    
+    // Reflection boundary condition helpers
+    Point2D calculateParabolicNormal(double x, double y) const;
+    bool isOnParabolicBoundary(double x, double y) const;
+    
+    // Finite difference helpers for boundary-aware wave propagation
+    double getFiniteDifferenceX(int i, int j) const;
+    double getFiniteDifferenceY(int i, int j) const;
+    double getBoundaryAwareFiniteDifferenceX(int i, int j) const;
+    double getBoundaryAwareFiniteDifferenceY(int i, int j) const;
     
     Point2D getGridCoordinates(int gridI, int gridJ) const;
     void calculateFocusPosition();
@@ -52,6 +65,7 @@ private:
     std::vector<float> m_grid;
     std::vector<float> m_previousGrid;
     std::vector<uint8_t> m_boundaryMask;
+    std::vector<BoundaryType> m_boundaryTypes;
     std::vector<float> m_sourceGrid;
     
     double m_time;

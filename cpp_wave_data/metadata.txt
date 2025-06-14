@@ -1,0 +1,16 @@
+# Dual Parabolic Wave Simulation Metadata
+grid_size=200
+domain_size_mm=600
+wave_speed_ms=343
+time_step_s=2.486274e-09
+num_time_steps=80
+total_duration_s=2.000000e-06
+major_parabola_diameter_mm=508
+major_parabola_focus_mm=100
+minor_parabola_diameter_mm=200
+minor_parabola_focus_mm=50
+focus_point_x_mm=0
+focus_point_y_mm=0
+ground_truth_compatible=true
+rigid_boundary_conditions=true
+cfl_stable=true

@@ -1,1 +1,0 @@
-/usr/bin/c++ -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/Benchmark.dir/link.d CMakeFiles/Benchmark.dir/src/benchmark.cpp.o CMakeFiles/Benchmark.dir/src/WaveField.cpp.o CMakeFiles/Benchmark.dir/src/Parabola.cpp.o CMakeFiles/Benchmark.dir/src/DualParabolicWaveSimulation.cpp.o -o bin/Benchmark  /usr/lib/x86_64-linux-gnu/libgomp.so /usr/lib/x86_64-linux-gnu/libpthread.a

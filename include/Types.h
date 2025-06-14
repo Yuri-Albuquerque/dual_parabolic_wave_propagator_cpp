@@ -37,6 +37,13 @@ struct SimulationConfig {
     double reflectionCoeff = 0.95;
 };
 
+// Boundary material types for thick parabolic reflectors
+enum class BoundaryType : uint8_t {
+    AIR = 0,        // Normal propagation medium (343 m/s)
+    PARABOLIC = 1,  // Thick parabolic material (0.343 m/s - 1000x slower)
+    RIGID = 2       // Rigid boundary (zero displacement)
+};
+
 // Forward declarations
 class WaveField;
 class Parabola;

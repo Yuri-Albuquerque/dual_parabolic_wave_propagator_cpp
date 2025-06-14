@@ -88,8 +88,8 @@ void printSimulationInfo(const DualParabolicWaveSimulation& sim) {
     std::cout << "  Simulation Speed: " << sim.getSimulationSpeed() << "x\n\n";
     
     std::cout << "Parabola Setup:\n";
-    std::cout << "  Major Parabola: 20\" diameter umbrella (concave down)\n";
-    std::cout << "  Minor Parabola: 100mm diameter bowl (concave up)\n";
+    std::cout << "  Major Parabola: 20\" (508mm) diameter umbrella (concave down)\n";
+    std::cout << "  Minor Parabola: 200mm diameter bowl (concave up)\n";
     std::cout << "  Focus points: Coincident for optimal wave focusing\n\n";
     
     std::cout << "Controls:\n";

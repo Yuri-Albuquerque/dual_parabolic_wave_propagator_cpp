@@ -17,17 +17,33 @@ DualParabolicWaveSimulation::DualParabolicWaveSimulation(int gridSize, double do
                                                        double simulationSpeed) {
     setupParabolas();
     setupWaveParameters();
-    setupSimulationConfig();
     
-    // Override config with custom parameters
+    // Override config with custom parameters BEFORE calculating CFL time step
     m_config.gridSize = gridSize;
     m_config.xMin = -domainSize / 2.0;
     m_config.xMax = domainSize / 2.0;
     m_config.yMin = -domainSize / 2.0;
     m_config.yMax = domainSize / 2.0;
-    m_config.timeStep = timeStep;
     
     m_waveParams.speed = waveSpeed * 1000.0; // Convert m/s to mm/s
+    
+    // Calculate CFL-compliant time step with new parameters
+    const double dx = (m_config.xMax - m_config.xMin) / (m_config.gridSize - 1);
+    const double dy = (m_config.yMax - m_config.yMin) / (m_config.gridSize - 1);
+    const double minGridSpacing = std::min(dx, dy);
+    const double speed = m_waveParams.speed;
+    
+    // CFL condition: dt <= CFL_factor * min(dx,dy) / (c * sqrt(2))
+    // Use CFL_factor = 0.4 for stability margin
+    const double maxStableTimeStep = 0.4 * minGridSpacing / (speed * std::sqrt(2.0));
+    
+    m_config.timeStep = maxStableTimeStep; // Use CFL-compliant time step instead of custom
+    m_config.dampingFactor = 0.001; // Minimal damping for better wave propagation
+    m_config.reflectionCoeff = 0.95; // High reflection coefficient
+    
+    std::cout << "CFL-compliant time step: " << std::scientific << maxStableTimeStep << " s" << std::endl;
+    std::cout << "Grid spacing: dx=" << std::fixed << std::setprecision(3) << dx 
+              << "mm, dy=" << dy << "mm" << std::endl;
     
     initializeWaveField();
 }
@@ -36,7 +52,7 @@ void DualParabolicWaveSimulation::setupParabolas() {
     // Convert units: 20 inches = 508mm, focus distances in mm
     const double majorDiameter = 20.0 * 25.4; // 508mm
     const double majorFocus = 100.0; // mm
-    const double minorDiameter = 10.0; // mm (CORRECTED from 100.0 to 10.0)
+    const double minorDiameter = 200.0; // mm (CORRECTED to match specification)
     const double minorFocus = 50.0; // mm
     
     // Focus point is at origin (coincident focus)

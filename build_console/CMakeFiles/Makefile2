@@ -63,10 +63,12 @@ CMAKE_BINARY_DIR = /home/yuri/Documents/project/dual_parabolic_wave_cpp/build_co
 # Directory level rules for the build root directory
 
 # The main recursive "all" target.
+all: CMakeFiles/WaveDataExporter.dir/all
 all: CMakeFiles/DualParabolicWaveSimulation.dir/all
 .PHONY : all
 
 # The main recursive "codegen" target.
+codegen: CMakeFiles/WaveDataExporter.dir/codegen
 codegen: CMakeFiles/DualParabolicWaveSimulation.dir/codegen
 .PHONY : codegen
 
@@ -75,8 +77,41 @@ preinstall:
 .PHONY : preinstall
 
 # The main recursive "clean" target.
+clean: CMakeFiles/WaveDataExporter.dir/clean
 clean: CMakeFiles/DualParabolicWaveSimulation.dir/clean
 .PHONY : clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/WaveDataExporter.dir
+
+# All Build rule for target.
+CMakeFiles/WaveDataExporter.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/WaveDataExporter.dir/build.make CMakeFiles/WaveDataExporter.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/WaveDataExporter.dir/build.make CMakeFiles/WaveDataExporter.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/yuri/Documents/project/dual_parabolic_wave_cpp/build_console/CMakeFiles --progress-num=6,7,8,9,10 "Built target WaveDataExporter"
+.PHONY : CMakeFiles/WaveDataExporter.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/WaveDataExporter.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/yuri/Documents/project/dual_parabolic_wave_cpp/build_console/CMakeFiles 5
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/WaveDataExporter.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/yuri/Documents/project/dual_parabolic_wave_cpp/build_console/CMakeFiles 0
+.PHONY : CMakeFiles/WaveDataExporter.dir/rule
+
+# Convenience name for target.
+WaveDataExporter: CMakeFiles/WaveDataExporter.dir/rule
+.PHONY : WaveDataExporter
+
+# codegen rule for target.
+CMakeFiles/WaveDataExporter.dir/codegen:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/WaveDataExporter.dir/build.make CMakeFiles/WaveDataExporter.dir/codegen
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/yuri/Documents/project/dual_parabolic_wave_cpp/build_console/CMakeFiles --progress-num=6,7,8,9,10 "Finished codegen for target WaveDataExporter"
+.PHONY : CMakeFiles/WaveDataExporter.dir/codegen
+
+# clean rule for target.
+CMakeFiles/WaveDataExporter.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/WaveDataExporter.dir/build.make CMakeFiles/WaveDataExporter.dir/clean
+.PHONY : CMakeFiles/WaveDataExporter.dir/clean
 
 #=============================================================================
 # Target rules for target CMakeFiles/DualParabolicWaveSimulation.dir
